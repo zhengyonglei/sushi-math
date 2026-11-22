@@ -1,11 +1,16 @@
 # Sushi Math
 
-A sushi conveyor game to practice multiplication from 1 × 1 through 9 × 9.
+[Play the game](https://zhengyonglei.github.io/sushi-math/)
 
-Select a plate, type an answer, and press Enter to catch it. Includes three belt speeds, pause, and unlimited practice.
+Practice single-digit multiplication at a sushi conveyor bar. Choose a plate and submit one answer. Correct answers catch it; wrong answers let another diner take it and count as a miss.
 
-## Play locally
-Open `dist/index.html` in a browser. No dependencies or build step.
+## Round settings
+- 2–10 seconds of travel per plate (default 10).
+- 0–20 allowed misses (default 3; the fourth miss fails).
+- Catch 1–100 plates to win (default 10).
 
-## Deploy with Netlify
-Import this repository, select the `main` branch, and deploy. `netlify.toml` sets the publish directory to `dist`; leave the build command blank. Future pushes to main automatically deploy.
+100 points per correct catch, plus 10 per consecutive catch after the first, capped at 50 bonus points. Misses reset the streak. Best scores are saved separately for each settings combination on the current device.
+
+Pause freezes the game; resuming gives a three-second countdown. Start fresh resets to the ready screen and requires Start round. An on-screen keypad supports tablets. Round summaries list wrong and missed facts.
+
+Open dist/index.html locally or visit GitHub Pages. No build or dependencies. GitHub Pages publishes main from the repository root; index.html redirects to dist/. Netlify remains supported via netlify.toml.
