@@ -40,7 +40,7 @@ function overlay(html){$('overlay').classList.remove('hidden');$('overlay').inne
 function ready(){
   clearTimeout(effectTimer);document.querySelectorAll('.spark').forEach(e=>e.remove());$('chef').classList.remove('grab');$('rival').classList.remove('steal');
   plates.forEach(p=>p.el.remove());plates=[];selected=null;state='ready';caught=missed=points=streak=bestStreak=0;mistakes=[];last=null;spawn=0;
-  choose(null,false);updateStats();$('timer').textContent='';$('chefLabel').textContent='Ready when you are!';
+  choose(null,false);updateStats();$('timer').textContent='';$('timebar').style.width='0%';$('chefLabel').textContent='Ready when you are!';$('rivalLabel').textContent='Other diner';
   $('feedback').textContent='One try per plate. A wrong answer lets another diner take it.';
   overlay(`<div class="emoji">🍣 🥢</div><h1>Ready, little chef?</h1><p>Catch <b>${config.target} plates</b> to win.<br>Each plate takes <b>${config.seconds} seconds</b> to reach the exit.</p><p class="rule-note">${config.misses} misses allowed. Miss number ${config.misses+1} ends the round.<br>Wrong answers and escaped plates both count.</p><button id="start" class="large">Start round</button><p class="rule-note">100 points per catch + a streak bonus of up to 50.</p>`);
   $('start').onclick=start;controls();
