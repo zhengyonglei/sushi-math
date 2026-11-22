@@ -27,9 +27,16 @@ function updateStats(){
   $('best').textContent=`Best for these settings: ${bestScore()}`;
 }
 function choose(p,focus=true){selected=p;plates.forEach(x=>x.el.classList.toggle('selected',x===p));$('question').textContent=p?`${p.a} × ${p.b} =`:'Ready for sushi?';$('answer').value='';controls();if(focus)focusAnswer();}
-function position(p){p.el.style.left=`${8+p.progress*84}%`;p.el.classList.toggle('urgent',p.progress>.75);}
+function position(p){p.el.style.left=`${12+p.progress*76}%`;p.el.classList.toggle('urgent',p.progress>.75);}
+// Four of every five questions emphasize 7, 8, or 9 without trivial ×1/×2 partners.
+let factBag=[];
+function nextFact(){
+  if(!factBag.length){factBag=[true,true,true,true,false];for(let i=factBag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[factBag[i],factBag[j]]=[factBag[j],factBag[i]];}}
+  let a,b;if(factBag.pop()){a=7+Math.floor(Math.random()*3);b=3+Math.floor(Math.random()*7);}else{a=1+Math.floor(Math.random()*6);b=1+Math.floor(Math.random()*6);}
+  if(Math.random()<.5)[a,b]=[b,a];return {a,b};
+}
 function addPlate(){
-  const p={a:1+Math.floor(Math.random()*9),b:1+Math.floor(Math.random()*9),progress:0,food:foods[Math.floor(Math.random()*foods.length)]};
+  const p={...nextFact(),progress:0,food:foods[Math.floor(Math.random()*foods.length)]};
   p.el=document.createElement('button');p.el.type='button';p.el.className='plate';p.el.style.setProperty('--rim',colors[Math.floor(Math.random()*colors.length)]);
   p.el.setAttribute('aria-label',`${p.a} times ${p.b}, select sushi plate`);
   p.el.innerHTML=`<span class="problem">${p.a} × ${p.b}</span><span class="food">${p.food}</span>`;
