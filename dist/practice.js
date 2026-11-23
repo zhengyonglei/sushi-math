@@ -1,6 +1,9 @@
 'use strict';
 const $=id=>document.getElementById(id), TOTAL=20;
 const foods=['🍣','🍤','🍙','🍥','🥟','🍱'], rims=['#ed896b','#80aea0','#e8bf58','#a59ac8','#7daebd'];
+// Owner-requested cleanup of pre-launch test progress, November 22, 2026.
+const TEST_RESET_BEFORE='2026-11-23T03:23:06.000Z';
+const afterTestReset=s=>Date.parse(s?.startedAt)>=Date.parse(TEST_RESET_BEFORE);
 const freshData=()=>({version:1,settings:{seconds:15},sessions:[],active:null});
 let data=freshData(), db=null, storageMode='memory', saveQueue=Promise.resolve(), saveRevision=0;
 let session=null, plates=[], selected=null, state='loading', last=null, countdown=3, spawnWait=0, draftClock=0, corrections=[], modalPrevious='ready', animationTimer;
@@ -32,8 +35,8 @@ function normalizeSession(s,complete){
 }
 function normalizeBackup(raw){
   if(!raw||raw.version!==1||!Array.isArray(raw.sessions)||raw.sessions.length>5000)throw Error('This is not a supported Sushi Math backup.');
-  const sessions=raw.sessions.map(s=>normalizeSession(s,true));const unique=new Map(sessions.map(s=>[s.id,s]));
-  return {version:1,settings:{seconds:paceValid(raw.settings?.seconds)?raw.settings.seconds:15},sessions:[...unique.values()].sort((a,b)=>Date.parse(a.startedAt)-Date.parse(b.startedAt)),active:raw.active?normalizeSession(raw.active,false):null};
+  const sessions=raw.sessions.map(s=>normalizeSession(s,true)).filter(afterTestReset);const unique=new Map(sessions.map(s=>[s.id,s]));
+  return {version:1,settings:{seconds:paceValid(raw.settings?.seconds)?raw.settings.seconds:15},sessions:[...unique.values()].sort((a,b)=>Date.parse(a.startedAt)-Date.parse(b.startedAt)),active:raw.active&&afterTestReset(raw.active)?normalizeSession(raw.active,false):null};
 }
 function status(message,error=false){$('storageStatus').textContent=message;$('storageStatus').classList.toggle('storage-error',error);}
 async function openStorage(){
@@ -50,9 +53,9 @@ function snapshot(){
   if(session&&['playing','paused','countdown'].includes(state)){session.positions=plates.map(p=>({index:p.index,progress:p.progress}));session.wait=spawnWait;data.active=session;}
   return JSON.parse(JSON.stringify(data));
 }
-function save(){
+function save(notifyCloud=true){
   const value=snapshot(),revision=++saveRevision;
-  window.sushiCloud?.schedule();
+  if(notifyCloud)window.sushiCloud?.schedule();
   saveQueue=saveQueue.then(async()=>{
     try{
       if(storageMode==='indexeddb')await new Promise((resolve,reject)=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(value,'progress');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
@@ -147,7 +150,7 @@ function wire(){
   document.addEventListener('keydown',e=>{if(hasDialog())return;if(e.key==='Escape'){e.preventDefault();if(state==='paused')beginCountdown();else pause();return;}if(state!=='playing'||e.target===$('answer'))return;if(/^\d$/.test(e.key)){e.preventDefault();$('answer').value=($('answer').value+e.key).slice(0,2);}if(e.key==='Backspace'){e.preventDefault();$('answer').value=$('answer').value.slice(0,-1);}if(e.key==='Enter'&&e.target.closest?.('#keypad')){e.preventDefault();submitAnswer();}});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){pause();save();}});window.addEventListener('pagehide',()=>save());
 }
-async function init(){wire();await openStorage();ready();requestAnimationFrame(frame);}
+async function init(){wire();await openStorage();ready();await save(false);requestAnimationFrame(frame);}
 const initPromise=init();
 // Small, validated interface for the optional cloud adapter. Local play never
 // depends on downloading Firebase or reaching its servers.
