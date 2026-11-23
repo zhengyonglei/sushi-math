@@ -3,7 +3,7 @@ import { firebaseConfig } from './firebase-config.js';
 const el=id=>document.getElementById(id);
 const progress=window.sushiProgress;
 let sdk, auth, database, user=null, ready=false, busy=false, timer=null, generation=0;
-let known=new Set(), lastState='', rerun=false;
+let known=new Set(), lastState='', rerun=false, localDirty=false;
 const ownerKey='sushi-cloud-owner-v1';
 function message(text){el('cloudStatus').textContent=text;}
 function errorMessage(error){
@@ -14,6 +14,7 @@ function errorMessage(error){
 }
 function buttons(){el('cloudSignIn').hidden=!!user;el('cloudSignOut').hidden=!user;el('cloudSync').hidden=!user;}
 function schedule(){
+  localDirty=true;
   if(!user||!ready)return;
   if(busy){rerun=true;return;}
   if(!timer){message('Changes saved locally · cloud sync pending…');timer=setTimeout(()=>{timer=null;sync(false);},10000);}
@@ -28,7 +29,7 @@ async function download(uid,token){
   const remote=progress.normalize({version:1,sessions:sessions.docs.map(d=>d.data()),settings:current.data()?.settings,active:current.data()?.active||null});
   known=new Set(remote.sessions.map(s=>s.id));
   // A completed session must never be revived as an unfinished cloud draft.
-  if(remote.active&&known.has(remote.active.id))remote.active=null;
+  if(localDirty||(remote.active&&known.has(remote.active.id)))remote.active=null;
   await progress.merge(remote);
   return token===generation;
 }
@@ -49,7 +50,7 @@ async function sync(pull=false){
     const encoded=JSON.stringify(state);
     if(token!==generation)return;
     if(encoded!==lastState){await sdk.setDoc(sdk.doc(database,'players',uid,'state','current'),{...state,updatedAt:sdk.serverTimestamp()});lastState=encoded;}
-    if(token===generation)message('Saved online · '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+' · '+user.email);
+    if(token===generation){if(!rerun)localDirty=false;message('Saved online · '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+' · '+user.email);}
   }catch(error){if(token===generation)message(errorMessage(error));}
   finally{busy=false;if(rerun)schedule();}
 }
@@ -90,3 +91,4 @@ async function boot(){
   }catch{message('Cloud sign-in could not load. You can keep playing locally; reload when connected.');}
 }
 boot();
+
