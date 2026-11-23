@@ -52,6 +52,7 @@ function snapshot(){
 }
 function save(){
   const value=snapshot(),revision=++saveRevision;
+  window.sushiCloud?.schedule();
   saveQueue=saveQueue.then(async()=>{
     try{
       if(storageMode==='indexeddb')await new Promise((resolve,reject)=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(value,'progress');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
@@ -152,3 +153,26 @@ function wire(){
 }
 async function init(){wire();await openStorage();ready();requestAnimationFrame(frame);}
 const initPromise=init();
+// Small, validated interface for the optional cloud adapter. Local play never
+// depends on downloading Firebase or reaching its servers.
+window.sushiProgress={
+  ready:initPromise,
+  read:()=>snapshot(),
+  normalize:normalizeBackup,
+  pause,
+  async merge(remote){
+    const incoming=normalizeBackup(remote);
+    const wasEmpty=!data.active&&!data.sessions.length;
+    const completedHere=data.active&&incoming.sessions.some(s=>s.id===data.active.id);
+    const newerDraft=data.active&&incoming.active?.id===data.active.id&&incoming.active.attempts.length>data.active.attempts.length;
+    if(completedHere||newerDraft){
+      data.active=completedHere?null:incoming.active;
+      ready();
+    }
+    mergeBackup(incoming);
+    if(wasEmpty)data.settings=incoming.settings;
+    if(state==='ready')ready();
+    if($('historyDialog').open)renderHistory();
+    await save();
+  }
+};

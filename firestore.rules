@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) { return request.auth != null && request.auth.uid == uid; }
+    match /players/{uid}/sessions/{sessionId} {
+      allow read: if owner(uid);
+      allow create: if owner(uid)
+        && request.resource.data.id == sessionId
+        && request.resource.data.plan is list && request.resource.data.plan.size() == 20
+        && request.resource.data.attempts is list && request.resource.data.attempts.size() == 20
+        && request.resource.data.seconds is int
+        && request.resource.data.seconds >= 8 && request.resource.data.seconds <= 30;
+      // Completed sessions are immutable; retrying the identical record is safe.
+      allow update: if owner(uid) && request.resource.data == resource.data;
+    }
+    match /players/{uid}/state/{stateId} {
+      allow read: if owner(uid) && stateId == 'current';
+      allow create, update: if owner(uid) && stateId == 'current'
+        && request.resource.data.keys().hasOnly(['version', 'settings', 'active', 'updatedAt'])
+        && request.resource.data.version == 1
+        && request.resource.data.settings.seconds is int
+        && request.resource.data.settings.seconds >= 8 && request.resource.data.settings.seconds <= 30
+        && (request.resource.data.active == null ||
+          (request.resource.data.active.plan.size() == 20 && request.resource.data.active.attempts.size() <= 20));
+    }
+  }
+}
