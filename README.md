@@ -17,7 +17,7 @@ A calm multiplication practice game with a moving sushi conveyor. Every session 
 
 One learner history per browser. IndexedDB stores settings, completed sessions, individual answers, and the unfinished session. Answers save immediately, with moving-plate positions checkpointed approximately every two seconds. If IndexedDB is unavailable, the app tries localStorage; if saving fails, it shows a visible warning. Old point-based scores are not converted into fictional learning history.
 
-My progress contains first-attempt accuracy over the last 20 sessions, a recent average, exact results, and facts still being learned. Export backup downloads JSON including unfinished progress. Import validates and merges completed sessions by ID and preserves an existing unfinished session. Keep a backup: browser data can be cleared or evicted. Optional parent Google sign-in syncs learning records to Firebase Firestore. No player data is uploaded to GitHub.
+My progress contains first-attempt accuracy over the last 20 sessions, a recent average, exact results, and facts still being learned. Browser data can be cleared or evicted; sign in and wait for Saved online to protect progress. Manual import/export controls have been removed. Optional parent Google sign-in syncs learning records to Firebase Firestore. No player data is uploaded to GitHub.
 
 ## Hosting
 
@@ -32,3 +32,4 @@ Sign in using the same parent account on each device. Existing local history mer
 Completed sessions merge across devices; play an unfinished session on one device at a time. A pre-existing local draft is retained unless the cloud has more answers for that same session. Different simultaneous drafts use the last cloud save. Automatic retry occurs on reconnect and further saves; Sync now retries manually. The game remains playable if the SDK or cloud is unavailable.
 
 Rules are tracked in `firestore.rules` with `firebase.json`. Deploy rule changes to the matching Firebase project; changing the file in GitHub alone does not deploy rules. The authorized sign-in domain is `zhengyonglei.github.io`.
+
