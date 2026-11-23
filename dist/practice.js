@@ -42,8 +42,8 @@ async function openStorage(){
     const value=await new Promise((resolve,reject)=>{const tx=db.transaction('app','readonly');const r=tx.objectStore('app').get('progress');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
     if(value)data=normalizeBackup(value);storageMode='indexeddb';status('Progress saves automatically on this device.');
   }catch{
-    try{const value=localStorage.getItem('sushi-learning-backup-v1');if(value)data=normalizeBackup(JSON.parse(value));localStorage.setItem('sushi-learning-storage-check','ok');localStorage.removeItem('sushi-learning-storage-check');storageMode='local';status('Progress saves in this browser. Export a backup regularly.');}
-    catch{storageMode='memory';status('Browser storage is unavailable. Export a backup before closing this page.',true);}
+    try{const value=localStorage.getItem('sushi-learning-backup-v1');if(value)data=normalizeBackup(JSON.parse(value));localStorage.setItem('sushi-learning-storage-check','ok');localStorage.removeItem('sushi-learning-storage-check');storageMode='local';status('Progress saves in this browser. Sign in to keep it online.');}
+    catch{storageMode='memory';status('Browser storage is unavailable. Sign in and wait for Saved online before closing.',true);}
   }
 }
 function snapshot(){
@@ -57,8 +57,8 @@ function save(){
     try{
       if(storageMode==='indexeddb')await new Promise((resolve,reject)=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(value,'progress');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
       else if(storageMode==='local')localStorage.setItem('sushi-learning-backup-v1',JSON.stringify(value));else throw Error('No storage');
-      if(revision===saveRevision)status('Saved on this device · use Export backup for another copy.');
-    }catch{status('Progress could not be saved. Export a backup before closing this page.',true);}
+      if(revision===saveRevision)status('Saved on this device.');
+    }catch{status('Local saving failed. Check that cloud saving says Saved online before closing.',true);}
   });return saveQueue;
 }
 function factStats(){
@@ -139,15 +139,12 @@ function openDialog(id){if(state==='loading'||hasDialog())return;modalPrevious=s
 function closeDialog(id){$(id).close();if(['playing','countdown'].includes(modalPrevious)&&state==='paused'&&!document.hidden)beginCountdown();else controls();}
 function requestReset(){if(data.active)openDialog('resetDialog');else ready();}
 function mergeBackup(incoming){const ids=new Set(data.sessions.map(s=>s.id));let count=0;for(const s of incoming.sessions)if(!ids.has(s.id)){data.sessions.push(s);ids.add(s.id);count++;}data.sessions.sort((a,b)=>Date.parse(a.startedAt)-Date.parse(b.startedAt));if(!data.active&&incoming.active&&!ids.has(incoming.active.id)){data.active=incoming.active;if(state==='ready')ready();}return count;}
-function exportBackup(){const blob=new Blob([JSON.stringify(snapshot(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`sushi-math-progress-${new Date().toISOString().slice(0,10)}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);$('backupStatus').textContent='Backup download started. Keep it somewhere safe.';}
-async function importBackup(file){if(!file)return;try{if(file.size>10000000)throw Error('Please choose a backup smaller than 10 MB.');const incoming=normalizeBackup(JSON.parse(await file.text()));const n=mergeBackup(incoming);await save();renderHistory();$('backupStatus').textContent=`Imported ${n} new completed session${n===1?'':'s'}. Existing sessions were kept.`;}catch{$('backupStatus').textContent='Could not import this file. Choose a valid Sushi Math progress backup; your current history has not been replaced.';}finally{$('importFile').value='';}}
 function wire(){
   $('answerForm').onsubmit=e=>{e.preventDefault();submitAnswer();};$('answer').oninput=()=>{$('answer').value=$('answer').value.replace(/\D/g,'').slice(0,2);};
   for(const key of ['1','2','3','4','5','6','7','8','9','Clear','0','⌫']){const b=document.createElement('button');b.type='button';b.textContent=key;b.dataset.key=key;if(key==='⌫')b.setAttribute('aria-label','Delete last digit');b.onclick=()=>{if(state!=='playing'||!selected||hasDialog())return;$('answer').value=key==='Clear'?'':key==='⌫'?$('answer').value.slice(0,-1):($('answer').value+key).slice(0,2);};$('keypad').append(b);}
   $('pause').onclick=()=>state==='paused'?beginCountdown():pause();$('reset').onclick=requestReset;$('historyButton').onclick=()=>openDialog('historyDialog');$('settingsButton').onclick=()=>openDialog('settingsDialog');$('closeHistory').onclick=()=>closeDialog('historyDialog');$('cancelSettings').onclick=()=>closeDialog('settingsDialog');$('cancelReset').onclick=()=>closeDialog('resetDialog');
   for(const id of ['historyDialog','settingsDialog','resetDialog'])$(id).addEventListener('cancel',e=>{e.preventDefault();closeDialog(id);});
   $('confirmReset').onclick=()=>{$('resetDialog').close();data.active=null;ready();save();};$('seconds').oninput=()=>{$('secondsValue').textContent=`${$('seconds').value} seconds`;};$('settingsForm').onsubmit=e=>{e.preventDefault();const seconds=Number($('seconds').value);if(!paceValid(seconds))return;data.settings.seconds=seconds;closeDialog('settingsDialog');if(state==='ready')ready();save();};
-  $('exportButton').onclick=exportBackup;$('importButton').onclick=()=>$('importFile').click();$('importFile').onchange=()=>importBackup($('importFile').files[0]);
   document.addEventListener('keydown',e=>{if(hasDialog())return;if(e.key==='Escape'){e.preventDefault();if(state==='paused')beginCountdown();else pause();return;}if(state!=='playing'||e.target===$('answer'))return;if(/^\d$/.test(e.key)){e.preventDefault();$('answer').value=($('answer').value+e.key).slice(0,2);}if(e.key==='Backspace'){e.preventDefault();$('answer').value=$('answer').value.slice(0,-1);}if(e.key==='Enter'&&e.target.closest?.('#keypad')){e.preventDefault();submitAnswer();}});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){pause();save();}});window.addEventListener('pagehide',()=>save());
 }
@@ -176,3 +173,4 @@ window.sushiProgress={
     await save();
   }
 };
+
