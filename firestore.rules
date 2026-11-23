@@ -5,6 +5,7 @@ service cloud.firestore {
     match /players/{uid}/sessions/{sessionId} {
       allow read: if owner(uid);
       allow create: if owner(uid)
+        && request.resource.data.startedAt >= '2026-11-23T03:23:06.000Z'
         && request.resource.data.id == sessionId
         && request.resource.data.plan is list && request.resource.data.plan.size() == 20
         && request.resource.data.attempts is list && request.resource.data.attempts.size() == 20
@@ -21,7 +22,8 @@ service cloud.firestore {
         && request.resource.data.settings.seconds is int
         && request.resource.data.settings.seconds >= 8 && request.resource.data.settings.seconds <= 30
         && (request.resource.data.active == null ||
-          (request.resource.data.active.plan.size() == 20 && request.resource.data.active.attempts.size() <= 20));
+          (request.resource.data.active.startedAt >= '2026-11-23T03:23:06.000Z' && request.resource.data.active.plan.size() == 20 && request.resource.data.active.attempts.size() <= 20));
     }
   }
 }
+
