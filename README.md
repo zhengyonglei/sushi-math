@@ -9,7 +9,7 @@ A calm multiplication practice game with a moving sushi conveyor. Every session 
 - Default 15 seconds per plate; Settings offers 8–30 seconds for the next session.
 - Tap a plate, enter an answer with the on-screen keypad or keyboard, and Grab plate.
 - Pause freezes plate motion; resuming gives a three-second countdown. Leaving the tab pauses automatically.
-- Start fresh asks before discarding unfinished work. Completed history is kept.
+- Unfinished sessions can be resumed. There is no progress-reset control in the game. After completing a session, Practice again starts another while keeping history.
 - Regular sessions combine familiar facts, harder facts, and up to six previously missed facts. Missed facts return until answered correctly twice after the most recent miss.
 - Animated chopsticks, eating reactions, rolling belt, collected plates, and a celebration for every completed session. Reduced-motion preferences are respected.
 
